@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>bits_of_bob</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@300;400;500;600&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+    <!--STYLE SHEET-->
+    <style>
+        :root {
+      --cream: #f5f0e8; --warm-mid: #e8e0d0; --tape: #c8b89a;
+      --ink: #2a2318; --ink-mid: #5a4f3e; --ink-faint: #9a8e7e;
+      --signal: #3a5a4a; --signal-soft: #6a8a72;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { min-height: 100%; background: var(--cream); font-family: 'Inconsolata', monospace; color: var(--ink); }
+
+    .grain {
+      position: fixed; inset: 0; pointer-events: none; opacity: 0.045; z-index: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 180px;
+    }
+    .scanlines {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background: repeating-linear-gradient(to bottom, transparent, transparent 3px, rgba(0,0,0,0.012) 3px, rgba(0,0,0,0.012) 4px);
+    }
+
+    .bob-wrap {
+      position: relative; z-index: 1;
+      max-width: 1100px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    @keyframes glitch {
+      0%   { text-shadow: none; transform: translate(0); }
+      8%   { text-shadow: -2px 0 #00ffcc, 2px 0 #ff003c; transform: translate(-1px, 1px); }
+      9%   { text-shadow: none; transform: translate(0); }
+      18%  { text-shadow: 2px 0 #00ffcc, -2px 0 #ff003c; transform: translate(1px, -1px); }
+      19%  { text-shadow: none; transform: translate(0); }
+      26%  { text-shadow: -3px 0 #00ffcc, 3px 0 #ff003c; transform: translate(-1px, 1px); }
+      27%  { text-shadow: none; transform: translate(0); }
+      38%  { text-shadow: 1px 0 #00ffcc, -1px 0 #ff003c; transform: translate(1px, 1px); }
+      39%  { text-shadow: none; transform: translate(0); }
+      48%  { text-shadow: -2px 0 #00ffcc, 1px 0 #ff003c; transform: translate(-1px, -1px); }
+      49%  { text-shadow: none; transform: translate(0); }
+      58%  { text-shadow: 3px 0 #00ffcc, -3px 0 #ff003c; transform: translate(1px, 0); }
+      59%  { text-shadow: none; transform: translate(0); }
+      68%  { text-shadow: -1px 0 #00ffcc, 1px 0 #ff003c; transform: translate(-1px, 1px); }
+      69%  { text-shadow: none; transform: translate(0); }
+      78%  { text-shadow: 2px 0 #00ffcc, -1px 0 #ff003c; transform: translate(1px, -1px); }
+      79%  { text-shadow: none; transform: translate(0); }
+      88%  { text-shadow: -1px 0 #00ffcc, 1px 0 #ff003c; transform: translate(-1px, 1px); }
+      89%  { text-shadow: none; transform: translate(0); }
+      100% { text-shadow: none; transform: translate(0); }
+    }
+
+    .glitch {
+      animation: glitch 1.5s steps(1) infinite;
+      display: inline-block;
+    }
+
+    /* header */
+    .header { border-bottom: 1px solid var(--tape); padding-bottom: 1.5rem; margin-bottom: 2rem; position: relative; }
+    .site-name { font-size: 2.4rem; font-weight: 300; letter-spacing: 0.08em; line-height: 1; }
+    .site-name span { color: var(--signal); font-weight: 500; }
+    .tagline { font-size: 0.82rem; color: var(--ink-faint); margin-top: 0.5rem; letter-spacing: 0.12em; font-weight: 300; }
+    .vhs-badge { position: absolute; top: 0; right: 0; font-size: 0.65rem; color: var(--ink-faint); letter-spacing: 0.18em; border: 0.5px solid var(--tape); padding: 3px 8px; font-weight: 300; }
+
+    /* intro */
+    .intro { font-family: 'IM Fell English', serif; font-style: italic; font-size: 1.05rem; color: var(--ink-mid); line-height: 1.75; margin-bottom: 2.5rem; padding-left: 1rem; border-left: 2px solid var(--tape); }
+
+    .section-label { font-size: 0.70rem; letter-spacing: 0.25em; color: var(--ink-mid); text-transform: uppercase; margin-bottom: 1rem; font-weight: 400; }
+
+    /* role grid — two independent rows so center line never moves */
+    .role-grid { border: 1px solid var(--tape); margin-bottom: 2.5rem; overflow: hidden; }
+    .role-row { display: grid; grid-template-columns: 1fr 1fr; }
+    .role-row:first-child { border-bottom: 1px solid var(--tape); }
+    .role-col { background: var(--cream); }
+    .role-col:first-child { border-right: 1px solid var(--tape); }
+
+    .role-header {
+      padding: 1.1rem 1rem;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s;
+    }
+
+    .role-header:hover { 
+      background: var(--warm-mid); 
+    }
+
+    .role-col.open .role-header { 
+      background: var(--ink); 
+    }
+
+    .role-num { 
+      font-size: 0.65rem; 
+      letter-spacing: 0.2em; 
+      color: var(--ink-faint); 
+      display:block; 
+      margin-bottom: 0.3rem; 
+      font-weight: 400; 
+    }
+
+    .role-num-row {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+    }
+
+    .role-name { 
+      font-size: 1.15rem; 
+      font-weight: 600; 
+      color: var(--ink); 
+      margin-bottom: 0.2rem; 
+      display: block;
+    }
+
+    .role-price {
+      font-size: .75rem;
+      font-weight: 600;
+      color: var(--ink-faint);
+      letter-spacing: .2rem;
+      font-style: italic;
+      margin-left: 12rem;
+    }
+
+    .role-col.open .role-name { 
+      color: 
+      var(--cream); 
+    }
+
+    .role-axis { 
+      font-size: 0.7rem; 
+      color: var(--signal-soft); 
+      display: block; 
+      font-weight: 400; 
+      font-style: italic; 
+    }
+
+    /* drawer — height driven by JS */
+    .role-drawer {
+      overflow: hidden;
+      height: 0;
+      transition: height 0.28s ease;
+      background: var(--ink);
+      display: flex;
+      flex-direction: column;
+    }
+    .role-drawer-inner {
+      padding: 0.8rem 2.0rem 1rem 0.9rem;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+    .role-desc {
+      font-size: 0.80rem;
+      color: var(--tape);
+      line-height: 1.3;
+      font-weight: 300;
+      display: block;
+      flex: 1;
+    }
+    .role-tagline {
+      font-size: 0.80rem;
+      color: var(--tape);
+      font-style: italic;
+      padding-top: 0.65rem;
+      border-top: 0.5px solid var(--ink-mid);
+      font-family: 'IM Fell English', serif;
+      display: block;
+      margin-top: auto;
+    }
+
+    /* services grid */
+    .service-price {font-size: 0.75rem; letter-spacing: 0.25em; color: var(--ink-mid); text-transform: uppercase; margin-bottom: 1rem; font-weight: 600;}
+    .services-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--tape); border: 1px solid var(--tape); margin-bottom: 2.0rem; }
+    .service-card { background: var(--cream); transition: background 0.15s; display: flex;
+      flex-direction: column;}
+    .service-card.wide { grid-column: span 2; }
+    .service-header { padding: 1rem 0.9rem; cursor: pointer; flex: 1;}
+    .service-header:hover { background: var(--warm-mid); margin-top: auto;}
+    .service-icon { font-size: 0.65rem; letter-spacing: 0.2em; color: var(--signal-soft); font-weight: 500; display: block; margin-bottom: 0.50rem; }
+    .service-top { display: flex; justify-content: space-between; align-items: flex-start; }
+    .service-name { font-size: 1.05rem; font-weight: 600; color: var(--ink); display: block; margin-bottom: 0.4rem; }
+    .service-desc { font-size: 0.72rem; color: var(--ink-mid); line-height: 1.55; font-weight: 380; }
+    .expand-toggle { font-size: 0.65rem; color: var(--ink-faint); flex-shrink: 0; margin-left: 0.5rem; margin-top: 2px; transition: transform 0.2s; display: inline-block; }
+    .expand-toggle.open { transform: rotate(180deg); }
+    .service-drawer { display: none; border-top: 0.5px solid var(--tape); padding: 0.75rem 0.9rem; background: var(--warm-mid); }
+    .service-drawer.open { display: block; }
+
+    /* players */
+    .drawer-label { font-size: 0.6rem; letter-spacing: 0.2em; color: var(--ink-faint); display: block; margin-bottom: 0.6rem; }
+    .player-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
+    .player-row:last-child { margin-bottom: 0; }
+    .player-title { font-size: 0.68rem; color: var(--ink-mid); min-width: 90px; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .play-btn {
+      width: 22px; height: 22px; border: 0.5px solid var(--tape); background: transparent;
+      color: var(--ink); font-family: 'Inconsolata', monospace; font-size: 0.62rem;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: all 0.15s;
+    }
+    .play-btn:hover { background: var(--signal); color: var(--cream); border-color: var(--signal); }
+    .play-btn.active-play { background: var(--ink); color: var(--cream); border-color: var(--ink); }
+    .progress-wrap { flex: 1; height: 3px; background: var(--tape); position: relative; cursor: pointer; }
+    .progress-fill { height: 100%; background: var(--signal-soft); width: 0%; transition: width 0.1s linear; }
+    .time-label { font-size: 0.6rem; color: var(--ink-faint); min-width: 28px; text-align: right; }
+
+    /* divider */
+    .divider { height: 1px; background: var(--tape); margin: 2rem 0; position: relative; }
+    .divider::after { content: '//'; position: absolute; top: -0.55rem; left: 50%; transform: translateX(-50%); background: var(--cream); padding: 0 0.5rem; font-size: 0.7rem; color: var(--tape); letter-spacing: 0.1em; }
+
+    /* contact */
+    .contact-block { display: flex; align-items: flex-start; gap: 2rem; }
+    .contact-left { flex: 1; }
+    .contact-label { font-size: 0.75rem; letter-spacing: 0.25em; color: var(--ink-faint); display: block; margin-bottom: 0.2rem; }
+    .contact-text { font-size: .70rem; color: var(--ink-mid); line-height: 1.2s; font-weight: 300; margin-bottom: 1.2rem;}
+    .contact-form { display: flex; flex-direction: column; gap: 0.75rem; }
+    .cf-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .cf-group { display: flex; flex-direction: column; gap: 0.25rem; }
+    .cf-label { font-size: 0.70rem; letter-spacing: 0.18em; color: var(--ink-faint); font-weight: 500; }
+    .cf-input, .cf-select, .cf-textarea {
+      background: var(--cream); border: none;
+      border-top: 1px solid var(--tape); border-left: 1px solid var(--tape);
+      border-bottom: 1px solid var(--warm-mid); border-right: 1px solid var(--warm-mid);
+      font-family: 'Inconsolata', monospace; font-size: 0.75rem;
+      color: var(--ink); padding: 5px 8px; outline: none; width: 100%;
+    }
+    .cf-input::placeholder, .cf-textarea::placeholder { color: var(--ink-faint); }
+    .cf-input:focus, .cf-select:focus, .cf-textarea:focus { background: var(--warm-mid); border-color: var(--tape); }
+    .cf-select { cursor: pointer; appearance: none; }
+    .cf-select option { background: var(--cream); color: var(--ink); }
+    .cf-textarea { resize: vertical; min-height: 72px; line-height: 1.55; }
+    .cf-char { font-size: 0.58rem; color: var(--ink-faint); text-align: right; }
+    .cf-char.warn { color: #8a5a2a; }
+    .cf-error { font-size: 0.62rem; color: #8a2a1a; display: none; }
+    .cf-error.visible { display: block; }
+    .cf-send {
+      align-self: flex-start; background: var(--signal);
+      border: none; color: var(--cream);
+      font-family: 'Inconsolata', monospace; font-size: 0.72rem;
+      letter-spacing: 0.15em; padding: 6px 16px; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .cf-send:hover { background: var(--signal-soft); }
+    .cf-success { display: none; flex-direction: column; gap: 0.5rem; padding: 1rem 0; }
+    .cf-success.visible { display: flex; }
+    .cf-success-msg { font-size: 0.82rem; color: var(--ink-mid); line-height: 1.7; }
+    .cf-success-tag { font-size: 0.65rem; letter-spacing: 0.2em; color: var(--signal-soft); animation: blink 1.2s steps(1) infinite; }
+
+    /* footer */
+    .footer-line { margin-top: 2.5rem; padding-top: 1rem; border-top: 1px solid var(--warm-mid); display: flex; justify-content: space-between; align-items: center; }
+    .footer-text { font-size: 0.65rem; color: var(--ink-faint); letter-spacing: 0.12em; font-weight: 300; }
+
+    .cursor-blink { display: inline-block; width: 7px; height: 0.9em; background: var(--signal); vertical-align: text-bottom; animation: blink 1.1s step-end infinite; margin-left: 2px; }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+    /* monitor bezel */
+    html, body { overflow: hidden; height: 100%; }
+
+    .monitor {
+      position: fixed; inset: 0; z-index: 100;
+      pointer-events: none;
+      display: flex; flex-direction: column;
+    }
+
+    .monitor-bezel {
+      position: absolute; inset: 0;
+      border: 8px solid #1a1510;
+      box-shadow:
+        inset 0 0 0 2px #0d0b08,
+        inset 0 0 0 4px #2e2720,
+        inset 0 0 20px rgba(0,0,0,0.6),
+        0 0 0 2px #0d0b08;
+      pointer-events: none;
+      z-index: 102;
+      border-radius: 6px;
+    }
+
+    /* corner screws */
+    .monitor-bezel::before,
+    .monitor-bezel::after {
+      content: '·';
+      position: absolute;
+      font-size: 10px;
+      color: #2e2720;
+      line-height: 1;
+    }
+    .monitor-bezel::before { top: -22px; left: -22px; }
+    .monitor-bezel::after  { bottom: -22px; right: -22px; }
+
+    .monitor-screen {
+      position: absolute;
+      inset: 8px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      z-index: 101;
+      pointer-events: all;
+      border-radius: 2px;
+    }
+
+    /* scanline vignette on top of screen */
+    .monitor-vignette {
+      position: absolute;
+      inset: 8px;
+      pointer-events: none;
+      z-index: 103;
+      background: radial-gradient(ellipse at center, transparent 70%, rgba(0,0,0,0.35) 100%);
+      border-radius: 2px;
+    }
+
+    /* hide the old fixed grain/scanlines — they'll show through the screen */
+    .grain, .scanlines { position: absolute; }
+
+    @media (max-width: 540px) {
+      .bob-wrap { padding: 2rem 1.2rem 3rem; }
+      .role-row { grid-template-columns: 1fr; }
+      .role-col:first-child { border-right: none; border-bottom: 1px solid var(--tape); }
+      .services-grid { grid-template-columns: 1fr; }
+      .service-card.wide { grid-column: span 1; }
+      .contact-block { flex-direction: column; }
+    }
+  </style>
+    <!--STYLE SHEET-->
+</head>
+
+<body>
+    <div class="monitor">
+        <div class="monitor-bezel"></div>
+        <div class="monitor-screen">
+            <div class="grain"></div>
+            <div class="scanlines"></div>
+            <div class="bob-wrap">
+                <div class="header">
+                    <div class="vhs-badge">est. 2026</div>
+                    <div class="site-name">bits_of_<span>bob</span><span class="cursor-blink"></span></div>
+                    <div class="tagline">audio · words · sound · misc. services for music & beyond</div>
+                </div>
+                <p class="intro"><span class="glitch" style="display: block;">analog heart cast in aliased artifacts. <br> spectral clouds and fuzzy imaging; pixellated pasts. <br> i'm your medium. you speak, i'll be the air_</span><span class="glitch" style="display: block; padding-left: 40%;">_blink</span>
+                </p>
+                <div class="section-label">// what role would you like me to play</div>
+                <div class="role-grid">
+                    <div class="role-row">
+
+                        <!--ARTIST CARD-->
+                        <div class="role-col" id="rc-0">
+                            <div class="role-header" onclick="toggleRole('rc-0')">
+                                <div class="role-num-row">
+                                    <span class="role-num">01</span>
+                                    <span class="role-price"> $50</span>
+                                </div>
+                                <span class="role-name">"artist"</span>
+                                <span class="role-axis">my ability</span>
+                            </div>
+                            <div class="role-drawer" id="rd-0">
+                                <div class="role-drawer-inner">
+                                    <span class="role-desc">detail a contribution you'd like me to make toward your song or project.</span>
+                                    <span class="role-tagline">a little bit of bob.</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!--PRODUCER CARD-->
+                        <div class="role-col" id="rc-1">
+                            <div class="role-header" onclick="toggleRole('rc-1')">
+                                <span class="role-num">02</span>
+                                <span class="role-name">"producer"</span>
+                                <span class="role-axis">my world</span>
+                            </div>
+                            <div class="role-drawer" id="rd-1">
+                                <div class="role-drawer-inner">
+                                    <span class="role-desc">choose from a bank of beats I've made</span>
+                                    <span class="role-tagline">bobby on the beat.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!--MIXER CARD-->
+                    <div class="role-row">
+                        <div class="role-col" id="rc-2">
+                            <div class="role-header" onclick="toggleRole('rc-2')">
+                                <span class="role-num">03</span>
+                                <span class="role-name">"mixer"</span>
+                                <span class="role-axis">my ear</span>
+                            </div>
+                            <div class="role-drawer" id="rd-2">
+                                <div class="role-drawer-inner">
+                                    <span class="role-desc">send me your stems and i will mix your track(s). then we can have a revision party.</span>
+                                    <span class="role-tagline">a portion of robert, to be precise.</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!--COLLABORATOR CARD-->
+                        <div class="role-col" id="rc-3">
+                            <div class="role-header" onclick="toggleRole('rc-3')">
+                                <span class="role-num">04</span>
+                                <span class="role-name">"collaborator"</span>
+                                <span class="role-axis">my judgment</span>
+                            </div>
+                            <div class="role-drawer" id="rd-3">
+                                <div class="role-drawer-inner">
+                                    <span class="role-desc">i will contribute my advice, experience, and presence to help you say what you mean.</span>
+                                    <span class="role-tagline">a little bobby buddy.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!--ADDL. SERVICES-->
+                <div class="section-label">// additional services</div>
+                <div class="services-grid">
+                    <div class="service-card">
+                        <div class="service-header">
+                            <onclick="toggleDrawer('d-ghost',this)">
+                            <span class="service-icon">[ pen ]</span>
+                            <div class="service-top">
+                                <div><span class="service-name">ghostwriting</span><span class="service-desc">lyrics, essays, liner notes. for artists who feel what they mean but not how to say it.</span></div>
+                                <span class="expand-toggle">▾</span>
+                            </div>
+                        </div>
+
+                        <div class="service-drawer" id="d-ghost">
+                            <span class="drawer-label">[ samples ]</span>
+                            <div class="player-row"><span class="player-title">excerpt i</span><button class="play-btn" data-aid="gh0" onclick="tp(event,'gh0',this)">▶</button>
+                                <div class="progress-wrap" onclick="ts(event,'gh0')">
+                                    <div class="progress-fill" id="prog-gh0"></div>
+                                </div><span class="time-label" id="time-gh0">0:00</span>
+                            </div>
+                            <div class="player-row"><span class="player-title">excerpt ii</span><button class="play-btn" data-aid="gh1" onclick="tp(event,'gh1',this)">▶</button>
+                                <div class="progress-wrap" onclick="ts(event,'gh1')">
+                                    <div class="progress-fill" id="prog-gh1"></div>
+                                </div><span class="time-label" id="time-gh1">0:00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="service-card">
+                        <div class="service-header">
+                            <onclick="toggleDrawer('d-epk',this)">
+                            <span class="service-icon">[ doc ]</span>
+                            <div class="service-top">
+                                <div><span class="service-name">press kit writing</span><span class="service-desc">artist bios, epks, press releases. words that carry your presence.</span></div>
+                                <span class="expand-toggle">▾</span>
+                            </div>
+                        </div>
+
+                        <div class="service-drawer" id="d-epk">
+                            <span class="drawer-label">[ samples ]</span>
+                            <div class="player-row"><span class="player-title">sample bio</span><button class="play-btn" data-aid="ek0" onclick="tp(event,'ek0',this)">▶</button>
+                                <div class="progress-wrap" onclick="ts(event,'ek0')">
+                                    <div class="progress-fill" id="prog-ek0"></div>
+                                </div><span class="time-label" id="time-ek0">0:00</span>
+                            </div>
+                            <div class="player-row"><span class="player-title">sample release</span><button class="play-btn" data-aid="ek1" onclick="tp(event,'ek1',this)">▶</button>
+                                <div class="progress-wrap" onclick="ts(event,'ek1')">
+                                    <div class="progress-fill" id="prog-ek1"></div>
+                                </div><span class="time-label" id="time-ek1">0:00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="service-card">
+                        <div class="service-header">
+                            <onclick="toggleDrawer('d-samples',this)">
+                            <span class="service-icon">[ wav ]</span>
+                            <div class="service-top">
+                                <div><span class="service-name">samples & loops</span><span class="service-desc">custom one-shots, textured loops, sound beds. analog-sourced or synthesized.</span></div>
+                                <span class="expand-toggle">▾</span>
+                            </div>
+                        </div>
+                        <div class="service-drawer" id="d-samples">
+                            <span class="drawer-label">[ samples ]</span>
+                            <div class="player-row"><span class="player-title">loop 001</span><button class="play-btn" data-aid="sl0" onclick="tp(event,'sl0',this)">▶</button>
+                                <div class="progress-wrap" onclick="ts(event,'sl0')">
+                                    <div class="progress-fill" id="prog-sl0"></div>
+                                </div><span class="time-label" id="time-sl0">0:00</span>
+                            </div>
+                            <div class="player-row"><span class="player-title">loop 002</span><button class="play-btn" data-aid="sl1" onclick="tp(event,'sl1',this)">▶</button>
+                                <div class="progress-wrap" onclick="ts(event,'sl1')">
+                                    <div class="progress-fill" id="prog-sl1"></div>
+                                </div><span class="time-label" id="time-sl1">0:00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="service-card">
+                        <div class="service-header">
+                            <onclick="toggleDrawer('d-sfx',this)">
+                            <span class="service-icon">[ sfx ]</span>
+                            <div class="service-top">
+                                <div><span class="service-name">sound design</span><span class="service-desc">foley, atmospheres, abstract textures. for film, video games, installations.</span></div>
+                                <span class="expand-toggle">▾</span>
+                            </div>
+                        </div>
+                        <div class="service-drawer" id="d-sfx">
+                            <span class="drawer-label">[ samples ]</span>
+                            <div class="player-row"><span class="player-title">texture 001</span><button class="play-btn" data-aid="sx0" onclick="tp(event,'sx0',this)">▶</button>
+                                <div class="progress-wrap" onclick="ts(event,'sx0')">
+                                    <div class="progress-fill" id="prog-sx0"></div>
+                                </div><span class="time-label" id="time-sx0">0:00</span>
+                            </div>
+                            <div class="player-row"><span class="player-title">texture 002</span><button class="play-btn" data-aid="sx1" onclick="tp(event,'sx1',this)">▶</button>
+                                <div class="progress-wrap" onclick="ts(event,'sx1')">
+                                    <div class="progress-fill" id="prog-sx1"></div>
+                                </div><span class="time-label" id="time-sx1">0:00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="service-card">
+                        <div class="service-header">
+                            <onclick="toggleDrawer('d-tape',this)">
+                            <span class="service-icon">[ loop ]</span>
+                            <div class="service-top">
+                                <div><span class="service-name">custom tape loops <span class="service-price">$15</span></span><span class="service-desc">hand-spliced, physically processed tape loops. one-of-a-kind analog artifacts for performers and collectors.</span></div>
+                                <span class="expand-toggle">▾</span>
+                            </div>
+                        </div>
+                        <div class="service-drawer" id="d-tape">
+                            <span class="drawer-label">[ samples ]</span>
+                            <div class="player-row"><span class="player-title">loop a</span><button class="play-btn" data-aid="tl0" onclick="tp(event,'tl0',this)">▶</button>
+                                <div class="progress-wrap" onclick="ts(event,'tl0')">
+                                    <div class="progress-fill" id="prog-tl0"></div>
+                                </div><span class="time-label" id="time-tl0">0:00</span>
+                            </div>
+                            <div class="player-row"><span class="player-title">loop b</span><button class="play-btn" data-aid="tl1" onclick="tp(event,'tl1',this)">▶</button>
+                                <div class="progress-wrap" onclick="ts(event,'tl1')">
+                                    <div class="progress-fill" id="prog-tl1"></div>
+                                </div>
+                                <span class="time-label" id="time-tl1">0:00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="service-card">
+                        <div class="service-header">
+                            <onclick="toggleDrawer('d-film',this)">
+                            <span class="service-icon">[ tab ]</span>
+                            <div class="service-top">
+                                <div><span class="service-name">transcription</span><span class="service-desc">hand-typed sheet music and/or tablature translation of voice memos, demos, guitar parts, etc.
+                                    </span></div>
+                                <span class="expand-toggle">▾</span>
+                            </div>
+                        </div>
+                        <div class="service-drawer" id="d-film">
+                            <span class="drawer-label">[ samples ]</span>
+                            <div class="player-row"><span class="player-title">cue 001</span><button class="play-btn" data-aid="fi0" onclick="tp(event,'fi0',this)">▶</button>
+                                <div class="progress-wrap" onclick="ts(event,'fi0')">
+                                    <div class="progress-fill" id="prog-fi0"></div>
+                                </div><span class="time-label" id="time-fi0">0:00</span>
+                            </div>
+                            <div class="player-row"><span class="player-title">cue 002</span><button class="play-btn" data-aid="fi1" onclick="tp(event,'fi1',this)">▶</button>
+                                <div class="progress-wrap" onclick="ts(event,'fi1')">
+                                    <div class="progress-fill" id="prog-fi1"></div>
+                                </div><span class="time-label" id="time-fi1">0:00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="divider"></div>
+                <div class="contact-block">
+                    <div class="contact-left">
+                        <span class="contact-label">// get in touch</span>
+                        <p class="contact-text"><br>reach out. let's chat about what you're working on.</p>
+                        <div class="contact-form" id="contact-form-view">
+                            <div class="cf-row">
+                                <div class="cf-group">
+                                    <label class="cf-label">// your name or handle</label>
+                                    <input class="cf-input" id="cf-name" type="text" placeholder="anonymous is fine" maxlength="60" />
+                                </div>
+                                <div class="cf-group">
+                                    <label class="cf-label">// what are you working on</label>
+                                    <select class="cf-select" id="cf-type">
+                                        <option value="">-- select --</option>
+                                        <option value="mixing / mastering">mixing / mastering</option>
+                                        <option value="ghostwriting">writing</option>
+                                        <option value="press kit / epk">press kit / epk</option>
+                                        <option value="samples / loops">samples / loops</option>
+                                        <option value="sound design">sound design</option>
+                                        <option value="custom tape loops">custom tape loops</option>
+                                        <option value="film scoring">transcription</option>
+                                        <option value="collaboration">collaboration</option>
+                                        <option value="other">other</option>
+                                    </select>
+                                    <span class="cf-error" id="cf-err-type">please select a type.</span>
+                                </div>
+                            </div>
+                            <div class="cf-group">
+                                <label class="cf-label">// tell me about it</label>
+                                <textarea class="cf-textarea" id="cf-desc" maxlength="500" placeholder="what is this. where did it come from. whatever."></textarea>
+                                <div class="cf-char" id="cf-desc-count">0 / 500</div>
+                            </div>
+                            <div class="cf-group">
+                                <label class="cf-label">// link (optional)</label>
+                                <input class="cf-input" id="cf-link" type="url" placeholder="soundcloud, bandcamp, drive, anywhere" />
+                            </div>
+                            <button class="cf-send" id="cf-submit">send it</button>
+                        </div>
+                        <div class="cf-success" id="cf-success">
+                            <p class="cf-success-msg">got it. i'll be in touch.</p>
+                            <span class="cf-success-tag">// message received</span>
+                        </div>
+                    </div>
+                    <div class="contact-left">
+                        <span class="contact-label">// turnaround</span>
+                        <p class="contact-text"><br>
+                            mixing: 5-7 business days first mix<br>
+                            2-3 business days per revision.<br><br>
+                            writing: 3-5 business days<br>
+                            custom audio: by project<br>
+                            rush available on request.
+                        </p>
+                    </div>
+                </div>
+                <div class="footer-line">
+                    <span class="footer-text">bits_of_bob · greenfield, ma</span>
+                    <span class="footer-text">they/them · independent · all genres considered</span>
+                </div>
+            </div><!-- /.bob-wrap -->
+        </div><!-- /.monitor-screen -->
+        <div class="monitor-vignette"></div>
+    </div><!-- /.monitor -->
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
+    <script>
+    // ── audio ──────────────────────────────────────────────
+    const srcs = {
+        i0: 'https://drive.google.com/uc?export=download&id=1MDPwIuofgyllkSAbecax9cBetUyLqUqf',
+        i1: 'https://drive.google.com/uc?export=download&id=1qMLILLw3qr_aymlN3mYTdJFz1dWuts-m',
+        p0: 'https://drive.google.com/uc?export=download&id=1OR5BKyjB0T2_X-UEXstwydPhKYyNO8MF',
+        p1: 'https://drive.google.com/uc?export=download&id=1IPvF_qXAfMU-uNosPRBid5z2rKCLUc7k',
+        l0: 'https://drive.google.com/uc?export=download&id=12GNFgxCq7mUmeD_w32_e0HQVUCiJb4Hk',
+        l1: 'https://drive.google.com/uc?export=download&id=1W9SOjZsgY1mUzInrz_w4KCVu2L7vifOP',
+    };
+    const pool = {};
+
+    function fmt(s) {
+        const m = Math.floor(s / 60),
+            sec = Math.floor(s % 60);
+        return m + ':' + (sec < 10 ? '0' : '') + sec;
+    }
+
+    function stopAll(exceptId) {
+        Object.entries(pool).forEach(([id, a]) => {
+            if (id !== exceptId && !a.paused) {
+                a.pause();
+                const b = document.querySelector('[data-aid="' + id + '"]');
+                if (b) { b.textContent = '▶';
+                    b.classList.remove('active-play'); }
+            }
+        });
+    }
+
+    function tp(e, id, btn) {
+        e.stopPropagation();
+        if (!srcs[id]) { btn.textContent = '—';
+            setTimeout(() => btn.textContent = '▶', 800); return; }
+        if (!pool[id]) {
+            pool[id] = new Audio(srcs[id]);
+            pool[id].addEventListener('timeupdate', () => {
+                const a = pool[id],
+                    pct = (a.currentTime / a.duration) * 100 || 0;
+                const pf = document.getElementById('prog-' + id);
+                const tl = document.getElementById('time-' + id);
+                if (pf) pf.style.width = pct + '%';
+                if (tl) tl.textContent = fmt(a.currentTime);
+            });
+            pool[id].addEventListener('ended', () => {
+                btn.textContent = '▶';
+                btn.classList.remove('active-play');
+                const pf = document.getElementById('prog-' + id);
+                const tl = document.getElementById('time-' + id);
+                if (pf) pf.style.width = '0%';
+                if (tl) tl.textContent = '0:00';
+            });
+        }
+        const a = pool[id];
+        if (a.paused) { stopAll(id);
+            a.play();
+            btn.textContent = '■';
+            btn.classList.add('active-play'); } else { a.pause();
+            btn.textContent = '▶';
+            btn.classList.remove('active-play'); }
+    }
+
+    function ts(e, id) {
+        e.stopPropagation();
+        const a = pool[id];
+        if (!a || !a.duration) return;
+        const rect = e.currentTarget.getBoundingClientRect();
+        a.currentTime = ((e.clientX - rect.left) / rect.width) * a.duration;
+    }
+
+    // ── role toggle ────────────────────────────────────────
+    // measure natural height while invisible, then animate from 0 → h
+    function toggleRole(colId) {
+        const col = document.getElementById(colId);
+        const drawer = col.querySelector('.role-drawer');
+        const isOpen = col.classList.contains('open');
+
+        if (isOpen) {
+            // close: lock to current px then animate to 0
+            drawer.style.height = drawer.offsetHeight + 'px';
+            requestAnimationFrame(() => {
+                drawer.style.height = '0';
+            });
+            col.classList.remove('open');
+        } else {
+            // open: measure hidden height, animate from 0 → h
+            drawer.style.visibility = 'hidden';
+            drawer.style.height = 'auto';
+            const h = 120;
+            drawer.style.height = '0';
+            drawer.style.visibility = '';
+            col.classList.add('open');
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    drawer.style.height = h + 'px';
+                });
+            });
+            drawer.addEventListener('transitionend', () => {
+                if (col.classList.contains('open')) drawer.style.height = 90;
+            }, { once: true });
+        }
+    }
+
+    // ── service drawers ────────────────────────────────────
+    function toggleDrawer(id, header) {
+        const drawer = document.getElementById(id);
+        const toggle = header.querySelector('.expand-toggle');
+        const isOpen = drawer.classList.contains('open');
+        drawer.classList.toggle('open', !isOpen);
+        if (toggle) toggle.classList.toggle('open', !isOpen);
+    }
+
+    // ── contact form ───────────────────────────────────────
+    (function() {
+        const desc = document.getElementById('cf-desc');
+        const count = document.getElementById('cf-desc-count');
+        const typeEl = document.getElementById('cf-type');
+        const typeErr = document.getElementById('cf-err-type');
+        const submit = document.getElementById('cf-submit');
+        const formView = document.getElementById('contact-form-view');
+        const successView = document.getElementById('cf-success');
+
+        if (!desc) return;
+
+        desc.addEventListener('input', () => {
+            const len = desc.value.length;
+            count.textContent = len + ' / 500';
+            count.classList.toggle('warn', len > 400);
+        });
+
+        submit.addEventListener('click', () => {
+            let valid = true;
+            if (!typeEl.value) {
+                typeErr.classList.add('visible');
+                valid = false;
+            } else {
+                typeErr.classList.remove('visible');
+            }
+            if (!valid) return;
+
+            const entry = {
+                id: Date.now(),
+                date: new Date().toISOString(),
+                name: document.getElementById('cf-name').value.trim() || 'anonymous',
+                type: typeEl.value,
+                description: desc.value.trim(),
+                link: document.getElementById('cf-link').value.trim(),
+            };
+
+            const existing = JSON.parse(localStorage.getItem('bob_enquiries') || '[]');
+            existing.push(entry);
+            localStorage.setItem('bob_enquiries', JSON.stringify(existing));
+
+            formView.style.display = 'none';
+            successView.classList.add('visible');
+        });
+    })();
+    </script>
+</body>
+
+</html>
