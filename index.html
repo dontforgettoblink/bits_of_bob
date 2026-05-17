@@ -5,13 +5,63 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>bits_of_bob</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@300;400;500;600&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@300;400;500;600;700&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
     <!--STYLE SHEET-->
     <style>
         :root {
       --cream: #f5f0e8; --warm-mid: #e8e0d0; --tape: #c8b89a;
       --ink: #2a2318; --ink-mid: #5a4f3e; --ink-faint: #9a8e7e;
       --signal: #3a5a4a; --signal-soft: #6a8a72;
+    }
+
+    /* terminal mode — click the est. 2026 badge to toggle */
+    body.terminal {
+      --cream: #050a05;        /* bg */
+      --warm-mid: #0d1a0d;     /* subtle hover lift */
+      --tape: #2a4a2a;         /* borders/dividers */
+      --ink: #7ad068;          /* primary phosphor green (faded) */
+      --ink-mid: #58a04a;      /* secondary text */
+      --ink-faint: #355530;    /* tertiary text */
+      --signal: #95d688;       /* accent */
+      --signal-soft: #6aae5c;  /* accent dim */
+    }
+
+    /* phosphor glow — every text element gets a soft halo in its own color,
+       at 60% opacity so the bloom is subtle rather than neon */
+    body.terminal * {
+      text-shadow:
+        0 0 6px color-mix(in srgb, currentColor 60%, transparent),
+        0 0 1px color-mix(in srgb, currentColor 60%, transparent);
+    }
+
+    /* buttons (and the badge that acts like one) opt out of the glow —
+       their labels are short and contrast-y and the halo makes them look smudged */
+    body.terminal button,
+    body.terminal .vhs-badge {
+      text-shadow: none;
+    }
+
+    body.terminal .monitor-bezel {
+      border-color: #050505;
+      box-shadow:
+        inset 0 0 0 2px #000,
+        inset 0 0 0 4px #0a1a0a,
+        inset 0 0 40px rgba(122, 208, 104, 0.08),  /* faint inner phosphor bloom */
+        0 0 0 2px #000;
+    }
+
+    /* badge inverts in terminal mode: filled green w/ dark text by default,
+       and hover flips back to the outlined look (= the normal-mode default).
+       net effect: hover always previews the other mode. */
+    body.terminal .vhs-badge {
+      color: var(--cream);
+      background: var(--signal);
+      border-color: var(--signal);
+    }
+    body.terminal .vhs-badge:hover {
+      color: var(--signal);
+      background: transparent;
+      border-color: var(--signal-soft);
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { min-height: 100%; background: var(--cream); font-family: 'Inconsolata', monospace; color: var(--ink); }
@@ -65,7 +115,21 @@
     .site-name { font-size: 2.4rem; font-weight: 300; letter-spacing: 0.08em; line-height: 1; }
     .site-name span { color: var(--signal); font-weight: 500; }
     .tagline { font-size: 0.82rem; color: var(--ink-faint); margin-top: 0.5rem; letter-spacing: 0.12em; font-weight: 400; }
-    .vhs-badge { position: absolute; top: 0; right: 0; font-size: 0.65rem; color: var(--ink-faint); letter-spacing: 0.18em; border: 0.5px solid var(--tape); padding: 3px 8px; font-weight: 400; }
+    .vhs-badge {
+      position: absolute; top: 0; right: 0;
+      font-size: 0.65rem; color: var(--signal);
+      letter-spacing: 0.18em;
+      border: 0.5px solid var(--signal-soft);
+      padding: 3px 8px; font-weight: 400;
+      cursor: pointer;
+      user-select: none;
+      transition: color 0.15s, border-color 0.15s, background 0.15s;
+    }
+    .vhs-badge:hover {
+      color: var(--cream);
+      background: var(--signal);
+      border-color: var(--signal);
+    }
 
     /* intro */
     .intro { font-family: 'IM Fell English', serif; font-style: italic; font-size: 1.05rem; color: var(--ink-mid); line-height: 1.75; margin-bottom: 2.5rem; padding-left: 1rem; border-left: 2px solid var(--tape); }
@@ -120,7 +184,7 @@
 
     .role-price {
       font-size: .75rem;
-      font-weight: 700;
+      font-weight: 400;
       color: var(--ink-faint);
       letter-spacing: .2rem;
       font-style: italic;
@@ -129,6 +193,7 @@
       right: 1rem;
       animation: price-glow 4s ease-in-out infinite;
     }
+    .role-price b { font-weight: 700; font-style: normal; }
 
     .role-col.open .role-name { 
       color: 
@@ -246,10 +311,18 @@
     .cf-error.visible { display: block; }
     .cf-send {
       align-self: flex-start; background: var(--signal);
-      border: none; color: var(--cream);
+      color: var(--cream);
       font-family: 'Inconsolata', monospace; font-size: 0.85rem;
       letter-spacing: 0.15em; padding: 6px 16px; cursor: pointer;
       transition: all 0.15s;
+      /* raised: top/left highlight, bottom/right shadow — mirrors the
+         inset look the form inputs have, but flipped so the button
+         reads as pushable. color-mix computes both shades from --signal
+         so the effect holds in terminal mode too. */
+      border-top: 1px solid color-mix(in srgb, var(--signal) 70%, white);
+      border-left: 1px solid color-mix(in srgb, var(--signal) 70%, white);
+      border-bottom: 1px solid color-mix(in srgb, var(--signal) 70%, black);
+      border-right: 1px solid color-mix(in srgb, var(--signal) 70%, black);
     }
     .cf-send:hover { background: var(--signal-soft); }
     .cf-success { display: none; flex-direction: column; gap: 0.5rem; padding: 1rem 0; }
@@ -341,7 +414,7 @@
             <div class="scanlines"></div>
             <div class="bob-wrap">
                 <div class="header">
-                    <div class="vhs-badge">est. 2026</div>
+                    <div class="vhs-badge" onclick="document.body.classList.toggle('terminal')">est. 2026</div>
                     <div class="site-name">bits_of_<span>bob</span><span class="cursor-blink"></span></div>
                     <div class="tagline">audio · words · sound · misc. services for music & beyond</div>
                 </div>
@@ -355,7 +428,7 @@
                         <div class="role-col" id="rc-0">
                             <div class="role-header" onclick="toggleRole('rc-0')">
                                 <span class="role-num">01</span>
-                                <span class="role-price">$25 per beat</span>
+                                <span class="role-price"><b>$30</b> per beat</span>
                                 <span class="role-name">"producer"</span>
                                 <span class="role-axis">my world</span>
                             </div>
@@ -371,7 +444,7 @@
                         <div class="role-col" id="rc-1">
                             <div class="role-header" onclick="toggleRole('rc-1')">
                                 <span class="role-num">02</span>
-                                <span class="role-price">$50 per song</span>
+                                <span class="role-price"><b>$50</b> per song</span>
                                 <span class="role-name">"artist"</span>
                                 <span class="role-axis">my ability</span>
                             </div>
@@ -389,7 +462,7 @@
                         <div class="role-col" id="rc-2">
                             <div class="role-header" onclick="toggleRole('rc-2')">
                                 <span class="role-num">03</span>
-                                <span class="role-price">$75 per stem</span>
+                                <span class="role-price"><b>$75</b> per stem</span>
                                 <span class="role-name">"mixer"</span>
                                 <span class="role-axis">my ear</span>
                             </div>
@@ -405,7 +478,7 @@
                         <div class="role-col" id="rc-3">
                             <div class="role-header" onclick="toggleRole('rc-3')">
                                 <span class="role-num">04</span>
-                                <span class="role-price">$40 per session</span>
+                                <span class="role-price"><b>$100</b> per session</span>
                                 <span class="role-name">"collaborator"</span>
                                 <span class="role-axis">my judgment</span>
                             </div>
@@ -577,9 +650,10 @@
                                     <input class="cf-input" id="cf-name" type="text" placeholder="anonymous is fine" maxlength="60" />
                                 </div>
                                 <div class="cf-group">
-                                    <label class="cf-label">// what are you working on</label>
+                                    <label class="cf-label">// what do you need?</label>
                                     <select class="cf-select" id="cf-type">
                                         <option value="">-- select --</option>
+                                        <option value="producer">"producer"</option>
                                         <option value="mixing / mastering">mixing / mastering</option>
                                         <option value="ghostwriting">writing</option>
                                         <option value="press kit / epk">press kit / epk</option>
@@ -752,7 +826,17 @@
     }
 
     // ── contact form ───────────────────────────────────────
+    // Backend: Google Forms. To wire it up, paste the form's submission
+    // URL and the four entry IDs below. See notes/contact_form_gforms_setup_notes.md.
     (function() {
+        const GFORMS_URL = 'PASTE_FORM_RESPONSE_URL_HERE';
+        const GFORMS_FIELDS = {
+            name:        'entry.XXXXXXXXX',  // name or handle
+            type:        'entry.XXXXXXXXX',  // what are you working on
+            description: 'entry.XXXXXXXXX',  // tell me about it
+            link:        'entry.XXXXXXXXX',  // link (optional)
+        };
+
         const desc = document.getElementById('cf-desc');
         const count = document.getElementById('cf-desc-count');
         const typeEl = document.getElementById('cf-type');
@@ -769,7 +853,8 @@
             count.classList.toggle('warn', len > 400);
         });
 
-        submit.addEventListener('click', () => {
+        submit.addEventListener('click', async () => {
+            // validate
             let valid = true;
             if (!typeEl.value) {
                 typeErr.classList.add('visible');
@@ -779,21 +864,33 @@
             }
             if (!valid) return;
 
-            const entry = {
-                id: Date.now(),
-                date: new Date().toISOString(),
-                name: document.getElementById('cf-name').value.trim() || 'anonymous',
-                type: typeEl.value,
-                description: desc.value.trim(),
-                link: document.getElementById('cf-link').value.trim(),
-            };
+            // build the payload as form-urlencoded with Google's entry.XXX keys
+            const data = new URLSearchParams();
+            data.append(GFORMS_FIELDS.name,        document.getElementById('cf-name').value.trim() || 'anonymous');
+            data.append(GFORMS_FIELDS.type,        typeEl.value);
+            data.append(GFORMS_FIELDS.description, desc.value.trim());
+            data.append(GFORMS_FIELDS.link,        document.getElementById('cf-link').value.trim());
 
-            const existing = JSON.parse(localStorage.getItem('bob_enquiries') || '[]');
-            existing.push(entry);
-            localStorage.setItem('bob_enquiries', JSON.stringify(existing));
+            // lock the button while in flight
+            submit.disabled = true;
+            const originalLabel = submit.textContent;
+            submit.textContent = 'sending...';
 
-            formView.style.display = 'none';
-            successView.classList.add('visible');
+            try {
+                // no-cors: the request lands in Google's hands, but we can't
+                // read the response. that's fine — we just trust it went through.
+                await fetch(GFORMS_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: data,
+                });
+                formView.style.display = 'none';
+                successView.classList.add('visible');
+            } catch (err) {
+                submit.disabled = false;
+                submit.textContent = originalLabel;
+                alert('something went wrong sending that. try again, or email me directly.');
+            }
         });
     })();
     </script>
