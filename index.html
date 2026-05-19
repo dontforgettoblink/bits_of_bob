@@ -260,11 +260,8 @@
        has square ends and won't animate to an X). */
     .menu-toggle {
       position: absolute;
-      top: 5.9rem;             /* bottom edge sits on the tagline's baseline */
-      /* burger's RIGHT edge needs to land at the header's right edge =
-         drawer's left edge − 2rem (the bob-wrap horizontal padding).
-         left = (target right edge) − width = -2rem − 18px. */
-      left: calc(-2rem - 18px);
+      bottom: 1.5rem;
+      right: 0;
       width: 18px; height: 15px;
       background: transparent;
       border: none;
@@ -295,7 +292,7 @@
        bezel (z:102) so the bezel still frames it. uses --ink for bg
        to match the role-drawer's dark interior. */
     .side-menu {
-      position: absolute;
+      position: fixed;
       top: 0; right: 0; bottom: 0;
       width: 260px;
       background: var(--ink);
@@ -723,27 +720,27 @@
         <div class="monitor-screen">
             <div class="grain"></div>
             <div class="scanlines"></div>
+            <aside class="side-menu" id="sideMenu" aria-hidden="true">
+                <div class="side-menu-label">// elsewhere</div>
+                <ul class="side-menu-list">
+                    <li><a class="side-menu-link" href="portfolio.html">full portfolio</a></li>
+                    <li><a class="side-menu-link" href="about.html">about</a></li>
+                    <li><a class="side-menu-link" href="listening-room.html">listening room</a></li>
+                    <li><a class="side-menu-link" href="writing.html">writing</a></li>
+                    <li><a class="side-menu-link" href="shop.html">shop</a></li>
+                    <li><a class="side-menu-link" href="log.html">log / notes</a></li>
+                </ul>
+                <div class="side-menu-foot">// signal stable</div>
+            </aside>
             <div class="bob-wrap">
                 <div class="header">
                     <div class="vhs-badge" onclick="document.body.classList.toggle('terminal')">est. 2026</div>
                     <div class="site-name">bits_of_<span>bob</span><span class="cursor-blink"></span></div>
                     <div class="tagline">music · words · sound · misc. services for audio & beyond</div>
-                </div>
-                <aside class="side-menu" id="sideMenu" aria-hidden="true">
                     <button class="menu-toggle" id="menuToggle" aria-label="toggle menu" onclick="toggleMenu()">
                         <span></span><span></span><span></span>
                     </button>
-                    <div class="side-menu-label">// elsewhere</div>
-                    <ul class="side-menu-list">
-                        <li><a class="side-menu-link" href="#">full portfolio</a></li>
-                        <li><a class="side-menu-link" href="#">about</a></li>
-                        <li><a class="side-menu-link" href="#">listening room</a></li>
-                        <li><a class="side-menu-link" href="#">writing</a></li>
-                        <li><a class="side-menu-link" href="#">shop</a></li>
-                        <li><a class="side-menu-link" href="#">log / notes</a></li>
-                    </ul>
-                    <div class="side-menu-foot">// signal stable</div>
-                </aside>
+                </div>
                 <p class="intro"><span class="glitch" style="display: block;">============================================<br>analog heart cast in aliased artifacts.<br> spectral clouds and fuzzy imaging; pixellated pasts.<br>i'm your medium. you speak, i'll be the air_<br></span><span class="glitch" style="display: block; padding-left: 40%;">_blink</span>============================================
                 </p>
                 <div class="section-label">// what do you want to call me?</div>

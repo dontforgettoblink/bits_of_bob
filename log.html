@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>log · bits_of_bob</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@300;400;500;600;700&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+    <style>
+    :root {
+      --cream: #f5f0e8; --warm-mid: #e8e0d0; --tape: #c8b89a;
+      --ink: #2a2318; --ink-mid: #5a4f3e; --ink-faint: #9a8e7e;
+      --signal: #3a5a4a; --signal-soft: #6a8a72; --chop: steps(5);
+    }
+    body.terminal {
+      --cream: #050a05; --warm-mid: #0d1a0d; --tape: #2a4a2a;
+      --ink: #7ad068; --ink-mid: #58a04a; --ink-faint: #355530;
+      --signal: #95d688; --signal-soft: #6aae5c;
+    }
+    body.terminal * { text-shadow: 0 0 6px color-mix(in srgb, var(--ink) 55%, transparent), 0 0 1px color-mix(in srgb, var(--ink) 55%, transparent); }
+    body.terminal button, body.terminal .vhs-badge { text-shadow: none; }
+    body.terminal .monitor-bezel { border-color: #050505; box-shadow: inset 0 0 0 2px #000, inset 0 0 0 4px #0a1a0a, inset 0 0 40px rgba(122,208,104,0.08), 0 0 0 2px #000; }
+    body.terminal .vhs-badge { color: var(--cream); background: var(--signal); border-color: var(--signal); }
+    body.terminal .vhs-badge:hover { color: var(--signal); background: transparent; border-color: var(--signal-soft); }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { min-height: 100%; height: 100%; overflow: hidden; background: var(--cream); font-family: 'Inconsolata', monospace; color: var(--ink); }
+    .monitor { position: fixed; inset: 0; z-index: 100; pointer-events: none; }
+    .monitor-bezel { position: absolute; inset: 0; border: 8px solid #1a1510; box-shadow: inset 0 0 0 2px #0d0b08, inset 0 0 0 4px #2e2720, inset 0 0 20px rgba(0,0,0,0.6), 0 0 0 2px #0d0b08; pointer-events: none; z-index: 102; border-radius: 6px; }
+    .monitor-bezel::before, .monitor-bezel::after { content: '·'; position: absolute; font-size: 10px; color: #2e2720; line-height: 1; }
+    .monitor-bezel::before { top: -22px; left: -22px; }
+    .monitor-bezel::after { bottom: -22px; right: -22px; }
+    .monitor-screen { position: absolute; inset: 8px; overflow-y: auto; overflow-x: hidden; z-index: 101; pointer-events: all; border-radius: 2px; }
+    .monitor-vignette { position: absolute; inset: 8px; pointer-events: none; z-index: 103; background: radial-gradient(ellipse at center, transparent 70%, rgba(0,0,0,0.22) 100%); border-radius: 2px; }
+    .grain { position: absolute; inset: 0; pointer-events: none; opacity: 0.045; z-index: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); background-size: 180px; }
+    .scanlines { position: absolute; inset: 0; pointer-events: none; z-index: 0; background: repeating-linear-gradient(to bottom, transparent, transparent 3px, rgba(0,0,0,0.012) 3px, rgba(0,0,0,0.012) 4px); }
+    .cursor-trail { position: fixed; inset: 0; pointer-events: none; z-index: 101; }
+    .cursor-ghost { position: absolute; top: 0; left: 0; transform: translate3d(-100px,-100px,0); will-change: transform, opacity; color: var(--signal-soft); }
+    .cursor-ghost svg { display: block; }
+    .cursor-ghost.is-pointer svg { transform: translateX(-4px); }
+    .cursor-ghost.is-text    svg { transform: translate(-3px,-8px); }
+    .bob-wrap { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 3rem 2rem 5rem; filter: blur(0.25px); }
+    .header { border-bottom: 1px solid var(--tape); padding-bottom: 1.5rem; margin-bottom: 2.5rem; position: relative; }
+    .site-name { font-size: 2.4rem; font-weight: 300; letter-spacing: 0.08em; line-height: 1; text-decoration: none; color: var(--ink); display: inline-block; }
+    .site-name span { color: var(--signal); font-weight: 500; }
+    .page-slug { font-size: 0.82rem; color: var(--ink-faint); margin-top: 0.5rem; letter-spacing: 0.12em; }
+    .vhs-badge { position: absolute; top: 0; right: 0; font-size: 0.65rem; color: var(--signal); letter-spacing: 0.18em; border: 0.5px solid var(--signal-soft); padding: 3px 8px; font-weight: 400; cursor: pointer; user-select: none; transition: color 0.15s var(--chop), border-color 0.15s var(--chop), background 0.15s var(--chop); }
+    .vhs-badge:hover { color: var(--cream); background: var(--signal); border-color: var(--signal); }
+    .menu-toggle { position: absolute; bottom: 1.5rem; right: 0; width: 18px; height: 15px; background: transparent; border: none; cursor: pointer; padding: 0; display: flex; flex-direction: column; justify-content: space-between; z-index: 5; }
+    .menu-toggle span { display: block; width: 100%; height: 3px; background: var(--ink-faint); border-radius: 2px; transition: background 0.15s var(--chop), transform 0.25s var(--chop), opacity 0.2s var(--chop); transform-origin: center; }
+    .menu-toggle:hover span, .menu-toggle.open span { background: var(--signal); }
+    .menu-toggle.open span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+    .menu-toggle.open span:nth-child(2) { opacity: 0; }
+    .menu-toggle.open span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+    .side-menu { position: fixed; top: 0; right: 0; bottom: 0; width: 260px; background: var(--ink); border-left: 1px solid var(--ink-mid); transform: translateX(100%); transition: transform 0.3s var(--chop); z-index: 50; padding: 4rem 1.5rem 2rem; display: flex; flex-direction: column; box-shadow: -4px 0 12px rgba(0,0,0,0.18); }
+    .side-menu.open { transform: translateX(0); }
+    .side-menu-label { font-size: 0.65rem; letter-spacing: 0.25em; color: var(--tape); text-transform: uppercase; margin-bottom: 1.2rem; padding-bottom: 0.6rem; border-bottom: 0.5px solid var(--ink-mid); }
+    .side-menu-list { list-style: none; display: flex; flex-direction: column; gap: 0.1rem; }
+    .side-menu-link { position: relative; display: flex; align-items: baseline; gap: 0.5rem; padding: 0.65rem 0.5rem; color: var(--tape); text-decoration: none; font-size: 0.95rem; font-weight: 400; letter-spacing: 0.04em; border-bottom: 0.5px solid transparent; overflow: hidden; transition: color 0.2s var(--chop), padding 0.2s var(--chop), border-color 0.2s var(--chop); }
+    .side-menu-link::before { content: '›'; color: var(--signal-soft); font-size: 0.9rem; transition: transform 0.2s var(--chop), color 0.2s var(--chop); z-index: 1; }
+    .side-menu-link:hover { color: var(--cream); padding-left: 0.8rem; border-bottom-color: var(--ink-mid); }
+    .side-menu-link:hover::before { transform: translateX(2px); color: var(--signal); }
+    .side-menu-link.current { color: var(--signal-soft); }
+    .side-menu-foot { margin-top: auto; font-size: 0.6rem; letter-spacing: 0.2em; color: var(--ink-faint); font-style: italic; }
+    .section-label { font-size: 0.65rem; letter-spacing: 0.25em; color: var(--ink-mid); text-transform: uppercase; margin-bottom: 1.5rem; padding-bottom: 0.5rem; border-bottom: 0.5px solid var(--tape); }
+    .footer-line { border-top: 0.5px solid var(--tape); padding-top: 1rem; margin-top: 4rem; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; }
+    .footer-text { font-size: 0.65rem; color: var(--ink-faint); letter-spacing: 0.1em; }
+
+    /* ── log ── */
+    .log-list { display: flex; flex-direction: column; gap: 0; max-width: 680px; }
+    .log-entry { padding: 1.5rem 0; border-bottom: 0.5px solid var(--tape); }
+    .log-entry-head { display: flex; align-items: baseline; gap: 1.2rem; margin-bottom: 0.6rem; }
+    .log-date { font-size: 0.65rem; letter-spacing: 0.2em; color: var(--ink-faint); }
+    .log-title { font-size: 0.92rem; color: var(--ink); font-weight: 400; }
+    .log-body { font-size: 0.8rem; color: var(--ink-mid); line-height: 1.7; font-style: italic; }
+    </style>
+</head>
+<body>
+<div class="monitor">
+    <div class="monitor-bezel"></div>
+    <div class="monitor-screen">
+        <div class="grain"></div>
+        <div class="scanlines"></div>
+        <aside class="side-menu" id="sideMenu" aria-hidden="true">
+            <div class="side-menu-label">// elsewhere</div>
+            <ul class="side-menu-list">
+                <li><a class="side-menu-link" href="portfolio.html">full portfolio</a></li>
+                <li><a class="side-menu-link" href="about.html">about</a></li>
+                <li><a class="side-menu-link" href="listening-room.html">listening room</a></li>
+                <li><a class="side-menu-link" href="writing.html">writing</a></li>
+                <li><a class="side-menu-link" href="shop.html">shop</a></li>
+                <li><a class="side-menu-link current" href="log.html">log / notes</a></li>
+            </ul>
+            <div class="side-menu-foot">// signal stable</div>
+        </aside>
+        <div class="bob-wrap">
+            <div class="header">
+                <a href="index.html" class="site-name">bits_<span>of</span>_bob</a>
+                <div class="page-slug">// log / notes</div>
+                <div class="vhs-badge" onclick="document.body.classList.toggle('terminal')">est. 2026</div>
+                <button class="menu-toggle" id="menuToggle" aria-label="toggle menu" onclick="toggleMenu()">
+                    <span></span><span></span><span></span>
+                </button>
+            </div>
+
+            <div class="section-label">// log / notes</div>
+
+            <div class="log-list">
+                <div class="log-entry">
+                    <div class="log-entry-head">
+                        <span class="log-date">2026.05.18</span>
+                        <span class="log-title">first entry</span>
+                    </div>
+                    <div class="log-body">placeholder — add notes here whenever.</div>
+                </div>
+                <div class="log-entry">
+                    <div class="log-entry-head">
+                        <span class="log-date">2026 — —</span>
+                        <span class="log-title">placeholder entry</span>
+                    </div>
+                    <div class="log-body">placeholder content.</div>
+                </div>
+                <div class="log-entry">
+                    <div class="log-entry-head">
+                        <span class="log-date">2026 — —</span>
+                        <span class="log-title">placeholder entry</span>
+                    </div>
+                    <div class="log-body">placeholder content.</div>
+                </div>
+            </div>
+
+            <div class="footer-line">
+                <span class="footer-text">bits_of_bob · greenfield, ma</span>
+                <span class="footer-text">they/them · independent · all genres considered</span>
+            </div>
+        </div>
+    </div>
+    <div class="cursor-trail" id="cursorTrail"></div>
+    <div class="monitor-vignette"></div>
+</div>
+<script>
+    function toggleMenu() {
+        const menu = document.getElementById('sideMenu');
+        const btn  = document.getElementById('menuToggle');
+        const open = menu.classList.toggle('open');
+        btn.classList.toggle('open', open);
+        menu.setAttribute('aria-hidden', open ? 'false' : 'true');
+    }
+    document.addEventListener('click', (e) => {
+        const menu = document.getElementById('sideMenu');
+        const btn  = document.getElementById('menuToggle');
+        if (!menu.classList.contains('open')) return;
+        if (menu.contains(e.target) || btn.contains(e.target)) return;
+        toggleMenu();
+    });
+    (function() {
+        const trail = document.getElementById('cursorTrail');
+        if (!trail) return;
+        const SHAPES = {
+            'default': '<svg width="13" height="20" viewBox="0 0 13 20" xmlns="http://www.w3.org/2000/svg"><path d="M0,0 L0,16.5 L4,13 L6.8,18.5 L8.8,17.6 L6.1,12.2 L11,12.2 Z" fill="currentColor" stroke="currentColor" stroke-width="0.6" stroke-linejoin="round"/></svg>',
+            'pointer': '<svg width="13" height="18" viewBox="0 0 13 18" xmlns="http://www.w3.org/2000/svg"><path d="M3,0 L5,0 L5,9 L7,9 L7,7 L9,7 L9,9 L11,9 L11,15 L10,16 L3,16 L2,14 L2,9 L3,9 Z" fill="currentColor" stroke="currentColor" stroke-width="0.6" stroke-linejoin="round"/></svg>',
+            'text':    '<svg width="7" height="16" viewBox="0 0 7 16" xmlns="http://www.w3.org/2000/svg"><path d="M0,0 L7,0 L7,2 L4.2,2 L4.2,14 L7,14 L7,16 L0,16 L0,14 L2.8,14 L2.8,2 L0,2 Z" fill="currentColor" stroke="currentColor" stroke-width="0.4" stroke-linejoin="round"/></svg>',
+        };
+        const GHOST_COUNT = 6, LAG_STEP = 3, HIST = GHOST_COUNT * LAG_STEP + 4;
+        const ghosts = [];
+        for (let i = 0; i < GHOST_COUNT; i++) {
+            const g = document.createElement('div');
+            g.className = 'cursor-ghost is-default';
+            g.innerHTML = SHAPES['default'];
+            trail.appendChild(g);
+            ghosts.push(g);
+        }
+        const history = new Array(HIST).fill(null);
+        let head = 0, mx = -100, my = -100, seen = false, currentType = 'default';
+        window.addEventListener('mousemove', (e) => { mx = e.clientX; my = e.clientY; seen = true; }, { passive: true });
+        window.addEventListener('mouseleave', () => { seen = false; });
+        function detectType(x, y) {
+            const el = document.elementFromPoint(x, y);
+            if (!el) return 'default';
+            const c = getComputedStyle(el).cursor;
+            if (c === 'pointer') return 'pointer';
+            if (c === 'text' || c === 'vertical-text') return 'text';
+            return 'default';
+        }
+        function setType(type) {
+            if (type === currentType) return;
+            currentType = type;
+            const svg = SHAPES[type] || SHAPES['default'];
+            const cls = 'cursor-ghost is-' + type;
+            for (let i = 0; i < ghosts.length; i++) { ghosts[i].className = cls; ghosts[i].innerHTML = svg; }
+        }
+        let pollTick = 0, renderSkip = 0;
+        function frame() {
+            requestAnimationFrame(frame);
+            if (++renderSkip < 3) return;
+            renderSkip = 0;
+            history[head] = seen ? { x: mx, y: my } : null;
+            if (++pollTick >= 3) { pollTick = 0; if (seen) setType(detectType(mx, my)); }
+            for (let i = 0; i < GHOST_COUNT; i++) {
+                const pos = history[(head - (i + 1) * LAG_STEP + HIST) % HIST];
+                const g = ghosts[i];
+                if (pos) {
+                    let jx = 0, jy = 0;
+                    if (Math.random() < 0.015) { jx = (Math.random() - 0.5) * 9; jy = (Math.random() - 0.5) * 5; }
+                    g.style.transform = 'translate3d(' + (pos.x + jx) + 'px,' + (pos.y + jy) + 'px,0)';
+                    g.style.opacity = String((1 - i / GHOST_COUNT) * 0.3);
+                } else { g.style.opacity = '0'; }
+            }
+            head = (head + 1) % HIST;
+        }
+        requestAnimationFrame(frame);
+    })();
+</script>
+</body>
+</html>
