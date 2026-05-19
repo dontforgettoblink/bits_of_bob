@@ -966,6 +966,10 @@
                                 <div class="cf-char" id="cf-desc-count">0 / 500</div>
                             </div>
                             <div class="cf-group">
+                                <label class="cf-label">your email</label>
+                                <input class="cf-input" id="cf-email" type="email" placeholder="so i can write back" maxlength="100" />
+                            </div>
+                            <div class="cf-group">
                                 <label class="cf-label">link (optional)</label>
                                 <input class="cf-input" id="cf-link" type="url" placeholder="soundcloud, bandcamp, drive, anywhere" />
                             </div>
@@ -974,6 +978,7 @@
                         <div class="cf-success" id="cf-success">
                             <p class="cf-success-msg">got it. i'll be in touch.</p>
                             <span class="cf-success-tag">// message received</span>
+                            <button id="cf-reset" style="margin-top:0.5rem;background:none;border:none;padding:0;font-size:0.7rem;color:var(--ink-faint);cursor:pointer;text-align:left;letter-spacing:0.1em;">send another</button>
                         </div>
                     </div>
                     <div class="contact-left">
@@ -1149,23 +1154,10 @@
     }
 
     // ── contact form ───────────────────────────────────────
-    // Backend: FormSubmit (https://formsubmit.co) — no account required.
-    //
-    // FIRST-TIME ACTIVATION:
-    //   The first real submission to this endpoint triggers a one-time
-    //   confirmation email from FormSubmit to RJ@bitsofbob.art. Click the
-    //   "Confirm" link inside it to activate; until then submissions won't
-    //   actually land in the inbox.
-    //
-    // OPTIONAL HARDENING (recommended after activation):
-    //   FormSubmit can issue a hashed alias like https://formsubmit.co/ajax/abc123…
-    //   so the plaintext address isn't sitting in page source as scrape-bait.
-    //   Grab it from the activation email and swap it into FORM_ENDPOINT.
-    //
-    // The AJAX endpoint returns JSON, so we get a real success/failure signal
-    // (the old GForms path used no-cors, which silently "succeeded" on errors).
+    // Backend: Web3Forms (https://web3forms.com) — sends to RJ@bitsofbob.art.
+    // Returns JSON so we get a real success/failure signal.
     (function() {
-        const FORM_ENDPOINT = 'https://formsubmit.co/ajax/RJ@bitsofbob.art';
+        const W3F_KEY = 'bde8c80f-99b4-4463-8463-c5be3648c4d7';
 
         const desc = document.getElementById('cf-desc');
         const count = document.getElementById('cf-desc-count');
@@ -1174,8 +1166,22 @@
         const submit = document.getElementById('cf-submit');
         const formView = document.getElementById('contact-form-view');
         const successView = document.getElementById('cf-success');
+        const resetBtn = document.getElementById('cf-reset');
 
         if (!desc) return;
+
+        resetBtn.addEventListener('click', () => {
+            successView.classList.remove('visible');
+            formView.style.display = '';
+            submit.disabled = false;
+            submit.textContent = 'send it';
+            document.getElementById('cf-name').value = '';
+            document.getElementById('cf-email').value = '';
+            typeEl.value = '';
+            desc.value = '';
+            count.textContent = '0 / 500';
+            document.getElementById('cf-link').value = '';
+        });
 
         desc.addEventListener('input', () => {
             const len = desc.value.length;
@@ -1194,20 +1200,9 @@
             }
             if (!valid) return;
 
-            const name = document.getElementById('cf-name').value.trim() || 'anonymous';
-            const link = document.getElementById('cf-link').value.trim();
-
-            // payload: human fields + FormSubmit config (underscore-prefixed
-            // keys are stripped from the email body and used as settings).
-            const payload = {
-                name: name,
-                type: typeEl.value,
-                description: desc.value.trim(),
-                link: link || '(none)',
-                _subject: '[bits_of_bob] ' + typeEl.value + ' — ' + name,
-                _template: 'table',     // nicer-looking inbox layout
-                _captcha: 'false',      // skip FormSubmit's captcha redirect (we're AJAX, not page-nav)
-            };
+            const name  = document.getElementById('cf-name').value.trim() || 'anonymous';
+            const email = document.getElementById('cf-email').value.trim();
+            const link  = document.getElementById('cf-link').value.trim();
 
             // lock the button while in flight
             submit.disabled = true;
@@ -1215,18 +1210,21 @@
             submit.textContent = 'sending...';
 
             try {
-                const res = await fetch(FORM_ENDPOINT, {
+                const res = await fetch('https://api.web3forms.com/submit', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                    },
-                    body: JSON.stringify(payload),
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({
+                        access_key:  W3F_KEY,
+                        name:        name,
+                        email:       email || '(none)',
+                        type:        typeEl.value,
+                        description: desc.value.trim(),
+                        link:        link || '(none)',
+                        subject:     '[bits_of_bob] ' + typeEl.value + ' — ' + name,
+                    }),
                 });
                 const data = await res.json();
-                // FormSubmit returns { success: "true", message: "..." } on success.
-                // string "true", not boolean — check both to be safe.
-                if (data.success === 'true' || data.success === true) {
+                if (data.success) {
                     formView.style.display = 'none';
                     successView.classList.add('visible');
                 } else {
