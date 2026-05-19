@@ -44,7 +44,7 @@
     .page-slug { font-size: 0.82rem; color: var(--ink-faint); margin-top: 0.5rem; letter-spacing: 0.12em; }
     .vhs-badge { position: absolute; top: 0; right: 0; font-size: 0.65rem; color: var(--signal); letter-spacing: 0.18em; border: 0.5px solid var(--signal-soft); padding: 3px 8px; font-weight: 400; cursor: pointer; user-select: none; transition: color 0.15s var(--chop), border-color 0.15s var(--chop), background 0.15s var(--chop); }
     .vhs-badge:hover { color: var(--cream); background: var(--signal); border-color: var(--signal); }
-    .menu-toggle { position: absolute; bottom: 1.5rem; right: 0; width: 18px; height: 15px; background: transparent; border: none; cursor: pointer; padding: 0; display: flex; flex-direction: column; justify-content: space-between; z-index: 5; }
+    .menu-toggle { position: absolute; top: calc(8.5rem + 8px); left: calc(-2rem - 18px); width: 18px; height: 15px; background: transparent; border: none; cursor: pointer; padding: 0; display: flex; flex-direction: column; justify-content: space-between; z-index: 5; }
     .menu-toggle span { display: block; width: 100%; height: 3px; background: var(--ink-faint); border-radius: 2px; transition: background 0.15s var(--chop), transform 0.25s var(--chop), opacity 0.2s var(--chop); transform-origin: center; }
     .menu-toggle:hover span, .menu-toggle.open span { background: var(--signal); }
     .menu-toggle.open span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
@@ -83,6 +83,7 @@
         <div class="grain"></div>
         <div class="scanlines"></div>
         <aside class="side-menu" id="sideMenu" aria-hidden="true">
+            <button class="menu-toggle menu-toggle-inner" onclick="toggleMenu()" aria-label="toggle menu"><span></span><span></span><span></span></button>
             <div class="side-menu-label">// elsewhere</div>
             <ul class="side-menu-list">
                 <li><a class="side-menu-link current" href="portfolio.html">full portfolio</a></li>
@@ -99,7 +100,7 @@
                 <a href="index.html" class="site-name">bits_<span>of</span>_bob</a>
                 <div class="page-slug">// full portfolio</div>
                 <div class="vhs-badge" onclick="document.body.classList.toggle('terminal')">est. 2026</div>
-                <button class="menu-toggle" id="menuToggle" aria-label="toggle menu" onclick="toggleMenu()">
+                <button class="menu-toggle menu-toggle-header" id="menuToggle" aria-label="toggle menu" onclick="toggleMenu()">
                     <span></span><span></span><span></span>
                 </button>
             </div>
@@ -157,16 +158,14 @@
 <script>
     function toggleMenu() {
         const menu = document.getElementById('sideMenu');
-        const btn  = document.getElementById('menuToggle');
         const open = menu.classList.toggle('open');
-        btn.classList.toggle('open', open);
+        document.querySelectorAll('.menu-toggle').forEach(b => b.classList.toggle('open', open));
         menu.setAttribute('aria-hidden', open ? 'false' : 'true');
     }
     document.addEventListener('click', (e) => {
         const menu = document.getElementById('sideMenu');
-        const btn  = document.getElementById('menuToggle');
         if (!menu.classList.contains('open')) return;
-        if (menu.contains(e.target) || btn.contains(e.target)) return;
+        if (menu.contains(e.target) || e.target.closest('.menu-toggle')) return;
         toggleMenu();
     });
     (function() {

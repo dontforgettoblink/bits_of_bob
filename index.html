@@ -305,6 +305,9 @@
       box-shadow: -4px 0 12px rgba(0,0,0,0.18);
     }
     .side-menu.open { transform: translateX(0); }
+    .menu-toggle-inner { top: calc(7rem - 7px); left: calc(-2rem - 18px); bottom: auto; right: auto; }
+    @media (min-width: 768px) { .menu-toggle-inner { display: none; } }
+    @media (max-width: 767px) { .menu-toggle-header { display: none; } }
 
     .side-menu-label {
       font-size: 0.65rem;
@@ -721,6 +724,7 @@
             <div class="grain"></div>
             <div class="scanlines"></div>
             <aside class="side-menu" id="sideMenu" aria-hidden="true">
+                <button class="menu-toggle menu-toggle-inner" onclick="toggleMenu()" aria-label="toggle menu"><span></span><span></span><span></span></button>
                 <div class="side-menu-label">// elsewhere</div>
                 <ul class="side-menu-list">
                     <li><a class="side-menu-link" href="portfolio.html">full portfolio</a></li>
@@ -737,7 +741,7 @@
                     <div class="vhs-badge" onclick="document.body.classList.toggle('terminal')">est. 2026</div>
                     <div class="site-name">bits_of_<span>bob</span><span class="cursor-blink"></span></div>
                     <div class="tagline">music · words · sound · misc. services for audio & beyond</div>
-                    <button class="menu-toggle" id="menuToggle" aria-label="toggle menu" onclick="toggleMenu()">
+                    <button class="menu-toggle menu-toggle-header" id="menuToggle" aria-label="toggle menu" onclick="toggleMenu()">
                         <span></span><span></span><span></span>
                     </button>
                 </div>
@@ -1082,17 +1086,15 @@
     // ── side menu ──────────────────────────────────────────
     function toggleMenu() {
         const menu = document.getElementById('sideMenu');
-        const btn = document.getElementById('menuToggle');
         const open = menu.classList.toggle('open');
-        btn.classList.toggle('open', open);
+        document.querySelectorAll('.menu-toggle').forEach(b => b.classList.toggle('open', open));
         menu.setAttribute('aria-hidden', open ? 'false' : 'true');
     }
     // close on outside click
     document.addEventListener('click', (e) => {
         const menu = document.getElementById('sideMenu');
-        const btn = document.getElementById('menuToggle');
         if (!menu.classList.contains('open')) return;
-        if (menu.contains(e.target) || btn.contains(e.target)) return;
+        if (menu.contains(e.target) || e.target.closest('.menu-toggle')) return;
         toggleMenu();
     });
 
