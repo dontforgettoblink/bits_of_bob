@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tag Sale POS</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>Tag Sale POS</h1>
+    <div id="session-total">Session total: <span id="session-amount">$0.00</span></div>
+  </header>
+
+  <main>
+    <!-- Item Entry -->
+    <section id="entry-panel">
+      <h2>Add Item</h2>
+      <div class="field-row">
+        <input id="item-name" type="text" placeholder="Item description" autocomplete="off" />
+      </div>
+      <div class="field-row">
+        <span class="prefix">$</span>
+        <input id="item-price" type="number" min="0" step="0.01" placeholder="0.00" />
+      </div>
+      <button id="add-btn" class="primary">Add to Cart</button>
+
+      <div class="quick-prices">
+        <span class="ql">Quick:</span>
+        <button class="qp" data-price="0.25">¢25</button>
+        <button class="qp" data-price="0.50">50¢</button>
+        <button class="qp" data-price="1.00">$1</button>
+        <button class="qp" data-price="2.00">$2</button>
+        <button class="qp" data-price="5.00">$5</button>
+        <button class="qp" data-price="10.00">$10</button>
+      </div>
+    </section>
+
+    <!-- Cart -->
+    <section id="cart-panel">
+      <h2>Cart</h2>
+      <div id="cart-list">
+        <p class="empty-msg">No items yet.</p>
+      </div>
+
+      <div id="cart-footer">
+        <div class="totals-row">
+          <span>Subtotal</span>
+          <span id="subtotal">$0.00</span>
+        </div>
+        <div class="discount-row">
+          <label for="discount-val">Discount</label>
+          <div class="discount-inputs">
+            <input id="discount-val" type="number" min="0" step="0.01" placeholder="0" />
+            <select id="discount-type">
+              <option value="dollar">$</option>
+              <option value="percent">%</option>
+            </select>
+          </div>
+        </div>
+        <div class="totals-row total-line">
+          <span>Total</span>
+          <span id="total">$0.00</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Payment -->
+    <section id="payment-panel">
+      <h2>Payment</h2>
+      <div class="field-row">
+        <span class="prefix">$</span>
+        <input id="cash-tendered" type="number" min="0" step="0.01" placeholder="0.00" />
+      </div>
+      <div class="change-display">
+        <span>Change due</span>
+        <span id="change-due">—</span>
+      </div>
+      <button id="complete-btn" class="primary success">Complete Sale</button>
+      <button id="clear-btn" class="secondary">Clear Cart</button>
+    </section>
+  </main>
+
+  <!-- Sales History -->
+  <section id="history-panel">
+    <div class="history-header">
+      <h2>Sales History</h2>
+      <div class="history-actions">
+        <span id="sale-count">0 sales</span>
+        <button id="clear-history-btn" class="danger-link">Clear history</button>
+      </div>
+    </div>
+    <div id="history-list">
+      <p class="empty-msg">No sales recorded yet.</p>
+    </div>
+  </section>
+
+  <script src="app.js"></script>
+</body>
+</html>
